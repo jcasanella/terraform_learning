@@ -10,6 +10,24 @@ variable "aws_profile" {
   default     = "default"
 }
 
+variable "project_name" {
+    description = "Project name"
+    type = string
+    default = "msk"
+}
+
+variable "environment" {
+    description = "AWS Environment"
+    type = string
+    default = "dev"
+}
+
+variable "resource_tags" {
+    description = "Tags to set for all resources"
+    type = map(string)
+    default = {}
+}
+
 variable "subnets" {
     description = "Subnet values"
     type = map(object({
