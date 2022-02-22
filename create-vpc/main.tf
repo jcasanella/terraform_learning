@@ -30,3 +30,38 @@ resource "aws_subnet" "subnet" {
     Name = each.key
   }
 }
+
+data "aws_ami" "amazon_linux" {
+  most_recent = true
+
+  filter {
+    name   = "name"
+    values = ["amzn2-ami-kernel-5.10-hvm*"]
+  }
+  owners = ["amazon"] # Canonical
+}
+
+data "aws_subnets" "selected" {
+  filter {
+    name = "vpc-id"
+    values = [aws_vpc.my_vpc.id]
+  } 
+  # filter {
+  #   name   = "tag:Name"
+  #   values = ["public-subnet-1"]
+  # }
+}
+
+output "subnet_cidr_blocks" {
+  value = data.aws_subnets.selected
+}
+
+resource "aws_instance" "kafka" {
+  ami           = data.aws_ami.amazon_linux.id
+  instance_type = "t2.micro"
+  subnet_id =  aws_subnet.subnet["public-subnet-1"].id
+  
+  tags = {
+    Name = "Kafka Machine"
+  }
+}
