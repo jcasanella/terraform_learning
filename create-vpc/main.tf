@@ -5,7 +5,7 @@ provider "aws" {
 
 locals {
   required_tags = {
-    project = var.project_name,
+    project     = var.project_name,
     environment = var.environment
   }
 
@@ -22,8 +22,8 @@ resource "aws_vpc" "my_vpc" {
 resource "aws_subnet" "subnet" {
   for_each = var.subnets
 
-  vpc_id = aws_vpc.my_vpc.id
-  cidr_block = each.value.cidr_block
+  vpc_id            = aws_vpc.my_vpc.id
+  cidr_block        = each.value.cidr_block
   availability_zone = each.value.availability_zone
 
   tags = {
@@ -43,9 +43,9 @@ data "aws_ami" "amazon_linux" {
 
 data "aws_subnets" "selected" {
   filter {
-    name = "vpc-id"
+    name   = "vpc-id"
     values = [aws_vpc.my_vpc.id]
-  } 
+  }
   # filter {
   #   name   = "tag:Name"
   #   values = ["public-subnet-1"]
@@ -59,8 +59,29 @@ output "subnet_cidr_blocks" {
 resource "aws_instance" "kafka" {
   ami           = data.aws_ami.amazon_linux.id
   instance_type = "t2.micro"
-  subnet_id =  aws_subnet.subnet["public-subnet-1"].id
-  
+  subnet_id     = aws_subnet.subnet["public-subnet-1"].id
+
+  provisioner "local-exec" {
+    command = "wget -O ${var.kafka_binary} https://archive.apache.org/dist/kafka/${var.scala_version}/kafka_${var.scala_version}-${var.kafka_version}.tgz"
+  }
+
+  provisioner "file" {
+    source      = "scripts/start.sh"
+    destination = "/tmp/provider/script.sh"
+  }
+
+  provisioner "file" {
+    source      = var.kafka_binary
+    destination = "/tmp/provider/kafka.tgz"
+  }
+
+  provisioner "remote-exec" {
+    inline = [
+      "chmod +x /tmp/provider/script.sh",
+      "/tmp/script.sh"
+    ]
+  }
+
   tags = {
     Name = "Kafka Machine"
   }
